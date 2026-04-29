@@ -37,6 +37,14 @@ OUT OF SCOPE:
 - templates/prototype.html
 - validation/test_backend_analysis_contract.py
 
+## Updated Rules
+- Follow the V1 scope lock strictly to avoid scope creep.
+- Always verify changes with real tests and commands.
+- Use the canonical files as the primary reference for backend logic.
+- Avoid introducing new frameworks or tools unless explicitly approved.
+- Ensure all production reports are deterministic and grounded in findings.
+- Link to existing documentation (e.g., `docs/STRUCTURE.md`) instead of duplicating content.
+
 ## Rules
 - Read the canonical files first before editing.
 - Do not invent routes, payload fields, or UI states.
@@ -77,3 +85,13 @@ Done means all of the following are true:
 3. Implement the smallest safe changes
 4. Verify
 5. Summarize exact file edits and exact commands run
+
+## Development Conventions
+- Organize manual test scripts under `scripts/` and `tests/`.
+- Place generated logs and outputs in `artifacts/`.
+- Maintain clear separation between the legacy Flask app and the new desktop architecture.
+- Use `validation/test_backend_analysis_contract.py` to validate backend analysis logic.
+
+## Key Links
+- [Project Structure](docs/STRUCTURE.md)
+- [Test Plan](docs/TEST_PLAN.md)

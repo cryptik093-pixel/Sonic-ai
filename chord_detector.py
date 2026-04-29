@@ -1,4 +1,3 @@
-"""
 Legacy chord detector wrapper.
 
 Routes chord detection through the unified analyzer to keep one maintained
@@ -29,13 +28,16 @@ def main() -> int:
         raise SystemExit("Provide a filepath or pass --record.")
 
     analyzer = SonicAnalyzer(duration=args.duration, enable_caching=True)
-    results = analyzer.analyze(device_id=args.device_id, record=args.record, filepath=args.filepath)
+    results = analyzer.analyze(device_id=args.device_id, record=args.record, filepath=args.filepath, generate_midi=True)
 
     print(f"Detected Chord: {results.get('chord', 'Unknown')}")
     print(f"Confidence: {results.get('chord_confidence', 0):.1%}")
 
     if args.json:
         print(json.dumps(results, indent=2))
+
+    if "midi_file" in results:
+        print(f"MIDI file generated: {results['midi_file']}")
 
     return 0
 

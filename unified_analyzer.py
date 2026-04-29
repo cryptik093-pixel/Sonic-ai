@@ -10,6 +10,7 @@ import librosa
 import numpy as np
 import sounddevice as sd
 from scipy import signal
+import mido
 
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 MAJOR = np.array([6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88])
@@ -345,7 +346,7 @@ class SonicAnalyzer:
             self.results["melodic_contour"] = "Rising" if delta > 15 else "Falling" if delta < -15 else "Flat"
         return self.results["melodic_contour"]
 
-    def analyze(self, device_id=5, record=True, filepath=None):
+    def analyze(self, device_id=5, record=True, filepath=None, generate_midi=False):
         self._reset()
         if filepath and self.enable_caching:
             file_hash = self._hash_file(filepath)
@@ -375,6 +376,11 @@ class SonicAnalyzer:
         self.results = self._json_safe(self.results)
         if filepath and self.enable_caching and self.file_hash:
             self._analysis_cache[self.file_hash] = json.loads(json.dumps(self.results))
+
+        # Generate MIDI if requested
+        if generate_midi:
+            self.generate_midi()
+
         return self.results
 
     def get_json(self):
@@ -385,6 +391,46 @@ class SonicAnalyzer:
 
     def print_report(self):
         print(self.get_json())
+
+    def generate_midi(self, output_path="output.mid"):
+        """
+        Generate a MIDI file based on detected chords, pitch distribution, and tempo.
+        """
+        if not self.results.get("chord") or not self.results.get("tempo"):
+            raise ValueError("Chord and tempo must be detected before generating MIDI.")
+
+        # Create a new MIDI file
+        midi = mido.MidiFile()
+        track = mido.MidiTrack()
+        midi.tracks.append(track)
+
+        # Add tempo
+        tempo = mido.bpm2tempo(self.results["tempo"])
+        track.append(mido.MetaMessage("set_tempo", tempo=tempo))
+
+        # Add chords as MIDI notes
+        chord_name = self.results["chord"]
+        root_note = NOTE_NAMES.index(chord_name.split()[0])
+        chord_type = chord_name.split()[1]
+        chord_intervals = {
+            "Major": [0, 4, 7],
+            "Minor": [0, 3, 7],
+            "Major 7": [0, 4, 7, 11],
+            "Dominant 7": [0, 4, 7, 10],
+            "Minor 7": [0, 3, 7, 10],
+            "Diminished": [0, 3, 6],
+            "Augmented": [0, 4, 8],
+        }
+        intervals = chord_intervals.get(chord_type, [0, 4, 7])
+        for interval in intervals:
+            note = root_note + interval
+            track.append(mido.Message("note_on", note=note, velocity=64, time=0))
+            track.append(mido.Message("note_off", note=note, velocity=64, time=480))
+
+        # Save MIDI file
+        midi.save(output_path)
+        self.results["midi_file"] = output_path
+        return output_path
 
 
 def main():
